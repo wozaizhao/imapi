@@ -20,6 +20,10 @@ io.on('connection', (client) => {
       .on('login', (user) => {
         console.log(`User ${user} logined`);
         io.emit('login', user);
+        setTimeout( async () => {
+          const contactList = await webot.Contact.findAll()
+          io.emit('contacts', contactList)
+        }, 2000);
       })
       .on('message', async (msg) => {
         const from = msg.from();
@@ -52,10 +56,14 @@ io.on('connection', (client) => {
     console.log('sendmessage', data);
     if (data.room) {
       const room = await webot.Room.find({topic: data.name})
-      await room.say(data.message)
+      if (room) {
+        await room.say(data.message)
+      }
     } else {
       const contact = await webot.Contact.find({name: data.name})
-      await contact.say(data.message)
+      if (contact) {
+        await contact.say(data.message)
+      }
     }
     // io.emit('event', 'an event sent to all connected clients');
   });
