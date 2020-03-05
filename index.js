@@ -5,8 +5,11 @@ const app = require('./config/express');
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 const { Wechaty } = require('wechaty'); // import { Wechaty } from 'wechaty'
-
 const webot = new Wechaty();
+
+const Sentry = require('@sentry/node');
+Sentry.init({ dsn: 'https://d72c3c5d33f64bd7a17d79feee82073d@sentry.io/3606504' });
+
 io.on('connection', (client) => {
   client.on('getqrcode', () => {
 
