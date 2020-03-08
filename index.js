@@ -12,6 +12,8 @@ const util = require('./util');
 const webot = new Wechaty();
 Sentry.init({ dsn: 'https://d72c3c5d33f64bd7a17d79feee82073d@sentry.io/3606504' });
 
+let running = false;
+
 io.on('connection', (client) => {
   client.on('getqrcode', () => {
     if (webot.logonoff()) {
@@ -51,8 +53,21 @@ io.on('connection', (client) => {
             age: msg.age()
           };
           io.emit('message', message);
+        });
+      if (!running) {
+        webot
+        .start()
+        .then(() => {
+          console.log('开始登陆微信');
+          running = true;
         })
-        .start();
+        .catch(async (e) => {
+          console.log(`初始化失败: ${e}.`);
+          await webot.stop();
+          running = false;
+          process.exit(1);
+        });
+      }
     }
   });
 
