@@ -1,11 +1,11 @@
 
-// import { asyncForEach, waitFor } from './util';
-
 const config = require('./config/config');
 const app = require('./config/express');
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
-const { Wechaty } = require('wechaty');
+const { Wechaty, FileBox } = require('wechaty');
+
+const fs = require('fs');
 const Sentry = require('@sentry/node');
 const util = require('./util');
 
@@ -13,6 +13,16 @@ const webot = new Wechaty();
 Sentry.init({ dsn: 'https://d72c3c5d33f64bd7a17d79feee82073d@sentry.io/3606504' });
 
 let running = false;
+const files = {};
+const struct = {
+  room: false,
+  contactname: null,
+  name: null,
+  type: null,
+  size: 0,
+  data: [],
+  slice: 0
+};
 
 io.on('connection', (client) => {
   client.on('getqrcode', () => {
@@ -91,6 +101,45 @@ io.on('connection', (client) => {
       }
     } catch (e) {
       console.log(e);
+    }
+  });
+
+  client.on('upload', (data) => {
+    if (!files[data.name]) {
+      files[data.name] = Object.assign({}, struct, data);
+      files[data.name].data = [];
+    }
+    // convert the ArrayBuffer to Buffer
+    const content = new Buffer(new Uint8Array(data.data));
+    // save the data
+    files[data.name].data.push(content);
+    files[data.name].slice = files[data.name].slice += 1;
+    console.log('on upload slice: ', files[data.name].slice);
+    if (files[data.name].slice * 100000 >= files[data.name].size) {
+      console.log('upload end');
+      const fileBuffer = Buffer.concat(files[data.name].data);
+      fs.writeFile(`./static/upload/${data.name}`, fileBuffer, async (err) => {
+        if (err) {
+          console.log('upload err');
+        } else {
+          const fileBox = FileBox.fromFile(`./static/upload/${data.name}`);
+          if (files[data.name].room) {
+            const room = await webot.Room.find({ topic: files[data.name].contactname });
+            if (room) {
+              await room.say(fileBox);
+              delete files[data.name];
+            }
+          } else {
+            const contact = await webot.Contact.find({ name: files[data.name].contactname });
+            if (contact) {
+              await contact.say(fileBox);
+              delete files[data.name];
+            }
+          }
+        }
+      });
+    } else {
+      io.emit('requestslice', { currentSlice: files[data.name].slice });
     }
   });
 
