@@ -5,6 +5,7 @@ const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 const { Wechaty, FileBox } = require('wechaty');
 const tran = require('./api/tran');
+const tuling = require('./api/tuling');
 
 const fs = require('fs');
 const Sentry = require('@sentry/node');
@@ -84,19 +85,38 @@ io.on('connection', (client) => {
           const isPenney = contactName === 'Penney';
           if (isPenney || isFrog) {
             if (/[\u4e00-\u9fa5]/.test(text)) {
-              try {
-                const reply = await tran(text);
-                console.log('reply', reply);
-                if (reply !== '') {
-                  await delay(1000);
-                  if (room) {
-                    room.say(reply);
-                  } else {
-                    contact.say(reply);
+              const mentionSelf = await msg.mentionSelf();
+              if (mentionSelf) {
+                const content = text.replace(/@[^,，：:\s@]+/g, '').trim();
+                try {
+                  const reply = await tuling(content);
+                  console.log('reply', reply);
+                  if (reply !== '' && reply !== '请求次数超限制!') {
+                    await delay(1000);
+                    if (room) {
+                      room.say(reply);
+                    } else {
+                      contact.say(reply);
+                    }
                   }
+                } catch (e) {
+                  console.log(e);
                 }
-              } catch (e) {
-                console.log(e);
+              } else {
+                try {
+                  const reply = await tran(text);
+                  console.log('reply', reply);
+                  if (reply !== '') {
+                    await delay(1000);
+                    if (room) {
+                      room.say(reply);
+                    } else {
+                      contact.say(reply);
+                    }
+                  }
+                } catch (e) {
+                  console.log(e);
+                }
               }
             }
           }
