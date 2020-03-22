@@ -4,6 +4,7 @@ const app = require('./config/express');
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 const { Wechaty, FileBox } = require('wechaty');
+const tran = require('./api/tran');
 
 const fs = require('fs');
 const Sentry = require('@sentry/node');
@@ -11,6 +12,14 @@ const util = require('./util');
 
 const webot = new Wechaty();
 Sentry.init({ dsn: 'https://d72c3c5d33f64bd7a17d79feee82073d@sentry.io/3606504' });
+
+/**
+ * 延时函数
+ * @param {*} ms 毫秒
+ */
+async function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 let running = false;
 const files = {};
@@ -63,6 +72,34 @@ io.on('connection', (client) => {
             age: msg.age()
           };
           io.emit('message', message);
+          // 在特定会话中，非我说了一句中文，自动翻译并回复
+          const contact = msg.from(); // 发消息人
+          const contactName = contact.name();
+          const room = msg.room();
+          let roomName = '';
+          if (room) {
+            roomName = await room.topic();
+          }
+          const isFrog = roomName === '温水煮青蛙';
+          const isPenney = contactName === 'Penney';
+          if (isPenney || isFrog) {
+            if (/[\u4e00-\u9fa5]/.test(text)) {
+              try {
+                const reply = await tran(text);
+                console.log('reply', reply);
+                if (reply !== '') {
+                  await delay(1000);
+                  if (room) {
+                    room.say(reply);
+                  } else {
+                    contact.say(reply);
+                  }
+                }
+              } catch (e) {
+                console.log(e);
+              }
+            }
+          }
         });
       if (!running) {
         webot
