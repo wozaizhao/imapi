@@ -57,7 +57,7 @@ io.on('connection', (client) => {
         .on('message', async (msg) => {
           const type = msg.type();
           let text = msg.text();
-          const mentionSelf = await msg.mentionSelf();
+          const mentionSelf = text.startsWith('@陈轶超');
           console.log('mentionSelf', mentionSelf);
           if (type === 6) {
             const fileBox = await msg.toFileBox();
