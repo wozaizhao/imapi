@@ -57,6 +57,8 @@ io.on('connection', (client) => {
         .on('message', async (msg) => {
           const type = msg.type();
           let text = msg.text();
+          const mentionSelf = await msg.mentionSelf();
+          console.log('mentionSelf', mentionSelf);
           if (type === 6) {
             const fileBox = await msg.toFileBox();
             const fileName = fileBox.name;
@@ -85,7 +87,6 @@ io.on('connection', (client) => {
           const isPenney = contactName === 'Penney';
           if (isPenney || isFrog) {
             if (/[\u4e00-\u9fa5]/.test(text)) {
-              const mentionSelf = await msg.mentionSelf();
               if (mentionSelf) {
                 const content = text.replace(/@[^,，：:\s@]+/g, '').trim();
                 try {

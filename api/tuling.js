@@ -25,7 +25,7 @@ async function tuling(word) {
         }
       },
       userInfo: {
-        apiKey: '6ecb3513186b4619ae86347000db0f55',
+        apiKey: '8a78898e9a5a4ca293b29271dbdb21d4',
         userId: uniqueId
       }
     };
