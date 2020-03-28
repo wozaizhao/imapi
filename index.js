@@ -58,6 +58,13 @@ io.on('connection', (client) => {
           const type = msg.type();
           let text = msg.text();
           const mentionSelf = text.startsWith('@陈轶超');
+          const contact = msg.from(); // 发消息人
+          const contactName = contact.name();
+          const room = msg.room();
+          let roomName = '';
+          if (room) {
+            roomName = await room.topic();
+          }
           console.log('mentionSelf', mentionSelf);
           if (type === 6) {
             const fileBox = await msg.toFileBox();
@@ -67,22 +74,17 @@ io.on('connection', (client) => {
           }
           const message = {
             from: msg.from(),
+            roomName,
+            contactName,
             to: msg.to(),
             text,
-            room: msg.room(),
+            room,
             type,
             self: msg.self(),
             age: msg.age()
           };
           io.emit('message', message);
           // 在特定会话中，非我说了一句中文，自动翻译并回复
-          const contact = msg.from(); // 发消息人
-          const contactName = contact.name();
-          const room = msg.room();
-          let roomName = '';
-          if (room) {
-            roomName = await room.topic();
-          }
           const isFrog = roomName === '温水煮青蛙';
           const isPenney = contactName === 'Penney';
           if (isPenney || isFrog) {
