@@ -34,6 +34,7 @@ app.use(helmet());
 // enable CORS - Cross Origin Resource Sharing
 app.use(cors());
 
+app.use(express.static('public'));
 app.use(express.static('static'));
 
 // enable detailed API logging in dev env
